@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Greenly — Multi-entity survey prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+  :root{
+    --primary:#26a551; --primary-hover:#1f8e45; --primary-contrast:#fff;
+    --green-50:#e6f6ea; --green-400:#54c073; --green-chip:#c4e8cc;
+    --text-primary:rgba(0,0,0,.87); --text-secondary:rgba(0,0,0,.6); --text-disabled:rgba(0,0,0,.38);
+    --bg-default:#fafafa; --paper:#fff; --elev2:#eee; --grey200:#eee; --grey400:#bdbdbd;
+    --outline:rgba(0,0,0,.08); --outline-strong:#e0e0e0;
+    --info-bg:#e3f2fd; --info-border:#bbdefb; --info-text:#0d47a1;
+    --indigo-bg:#c7d6ed; --indigo-text:#2a456f;
+    --disabled-bg:rgba(0,0,0,.12);
+    --radius-xs:4px; --radius-sm:4px; --radius-md:12px; --radius-btn:6px;
+    --connector:#bdbdbd;
+    /* Figma typography tokens */
+    --fs-h2:24px; --lh-h2:32px; --ls-h2:-0.36px;
+    --fs-body1:16px; --lh-body1:24px;
+    --fs-body2:14px; --lh-body2:20px;
+    --fs-caption:12px; --lh-caption:20px;
+    --fs-chip:13px; --lh-chip:18px;
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600;
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:var(--grey200);color:var(--text-primary);font-size:var(--fs-body2);line-height:var(--lh-body2);overflow:hidden;}
+  button{font-family:inherit;cursor:pointer;}
+  .app{display:flex;height:100vh;width:100vw;background:var(--elev2);}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{width:240px;flex-shrink:0;background:var(--elev2);display:flex;flex-direction:column;justify-content:space-between;padding:24px 16px;overflow-y:auto;}
+  .logo{display:flex;align-items:center;padding-left:4px;}
+  .logo img{height:24px;width:auto;display:block;}
+  .logo span{color:var(--primary);}
+  .acct-input{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--outline);border-radius:var(--radius-sm);padding:8px 12px;font-size:16px;width:208px;}
+  .acct-input i{font-size:18px;color:var(--text-secondary);} .acct-input .caret{margin-left:auto;color:var(--text-secondary);}
+  .ask{display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:none;width:100%;font-weight:600;font-size:14px;color:var(--text-primary);
+       background:linear-gradient(88deg,rgba(47,206,101,.15) 27%,rgba(69,207,170,.15) 88%);}
+  .ask i{font-size:18px;}
+  .nav{display:flex;flex-direction:column;gap:8px;margin-top:24px;}
+  .nav-item{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:6px;font-size:14px;color:var(--text-primary);}
+  .nav-item.active{background:rgba(0,0,0,.08);font-weight:500;}
+  .nav-item i.lead{font-size:18px;} .nav-item .caret{margin-left:auto;font-size:14px;color:var(--text-secondary);}
+  .side-foot{display:flex;flex-direction:column;gap:12px;}
+  .side-select{display:flex;align-items:center;background:var(--paper);border:1px solid var(--outline);border-radius:var(--radius-sm);padding:8px 12px;font-size:14px;color:var(--text-secondary);}
+  .side-select .caret{margin-left:auto;}
+  .logout{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--paper);border:1px solid var(--outline);border-radius:var(--radius-sm);padding:8px 16px;font-weight:600;font-size:14px;color:var(--text-primary);}
+
+  /* ---------- Body ---------- */
+  .body{flex:1;min-width:0;display:flex;flex-direction:column;padding:8px 8px 8px 0;}
+  .main{flex:1;min-height:0;background:var(--bg-default);border-radius:var(--radius-md);display:flex;flex-direction:column;overflow:hidden;}
+  .topnav{height:64px;flex-shrink:0;border-bottom:2px solid var(--grey200);display:flex;align-items:center;justify-content:space-between;padding:12px 24px;}
+  .crumb{display:flex;align-items:center;gap:8px;font-weight:var(--fw-medium);font-size:var(--fs-body1);line-height:var(--lh-body1);}
+  .crumb .muted{color:var(--text-secondary);} .crumb .sep{color:var(--text-secondary);}
+  .topnav-actions{display:flex;gap:12px;}
+  .btn{border-radius:var(--radius-xs);padding:8px 24px;font-weight:var(--fw-semibold);font-size:var(--fs-body1);line-height:var(--lh-body1);border:none;display:inline-flex;align-items:center;gap:8px;}
+  .btn-outline{background:var(--paper);border:1px solid var(--outline);color:var(--text-primary);}
+  .btn-disabled{background:var(--disabled-bg);color:var(--text-disabled);cursor:not-allowed;}
+  .btn-primary{background:var(--primary);color:var(--primary-contrast);}
+  .btn-primary:hover{background:var(--primary-hover);}
+
+  .scroll{flex:1;min-height:0;overflow-y:auto;}
+  .header{padding:24px 24px 0;}
+  .h-title{display:flex;align-items:center;gap:8px;}
+  .h-title h1{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:var(--fw-semibold);letter-spacing:var(--ls-h2);margin:0;}
+  .chip-acct{display:inline-flex;align-items:center;gap:2px;background:var(--grey200);border-radius:9999px;padding:2px 8px 2px 4px;font-size:13px;}
+  .chip-acct i{font-size:18px;}
+
+  .tabs{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--outline);margin-top:16px;}
+  .tabset{display:flex;}
+  .tab{display:flex;align-items:center;gap:8px;padding:8px 16px 12px;font-weight:var(--fw-medium);font-size:var(--fs-body1);line-height:var(--lh-body1);color:var(--text-secondary);border-bottom:2px solid transparent;}
+  .tab.active{color:var(--text-primary);border-bottom-color:var(--primary);}
+  .tab.done .step-dot{background:var(--primary);}
+  .step-dot{width:20px;height:20px;border-radius:9999px;background:var(--text-disabled);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;}
+  .tab.active .step-dot{background:var(--primary);}
+  .tab:not(.active):not(.done) .step-dot{background:var(--text-secondary);}
+  .status-box{display:flex;align-items:center;gap:6px;font-size:14px;}
+  .status-box .lbl{color:#6e7072;font-weight:500;}
+  .status-pill{background:var(--indigo-bg);color:var(--indigo-text);font-weight:500;border-radius:9999px;padding:3px 10px;font-size:14px;}
+
+  .content-area{padding:24px;display:flex;flex-direction:column;align-items:center;}
+
+  /* Getting started tab */
+  .gs-wrap{width:100%;max-width:1055px;display:flex;flex-direction:column;gap:24px;}
+  .hero-card{display:flex;gap:32px;align-items:stretch;background:var(--paper);border:1px solid var(--outline-strong);border-radius:10px;padding:16px;min-height:220px;}
+  .hero-text{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:16px;}
+  .hero-title{font-size:20px;line-height:24px;font-weight:var(--fw-semibold);letter-spacing:-.2px;margin:0 0 8px;}
+  .hero-body{font-size:var(--fs-body1);line-height:var(--lh-body1);margin:0;color:var(--text-primary);}
+  .link-strong{font-size:var(--fs-body2);line-height:var(--lh-body2);font-weight:var(--fw-semibold);color:var(--text-primary);text-decoration:underline;cursor:pointer;align-self:flex-start;}
+  .hero-img{flex:1;min-width:0;border-radius:10px;overflow:hidden;display:flex;}
+  .hero-img svg{display:block;width:100%;height:100%;object-fit:cover;}
+
+  .gs-cols{display:flex;gap:24px;align-items:flex-start;}
+  .gs-card{flex:1;min-width:0;background:var(--paper);border:1px solid var(--outline);border-radius:10px;padding:32px;display:flex;flex-direction:column;gap:24px;}
+  .gs-h{font-size:20px;line-height:24px;font-weight:var(--fw-semibold);letter-spacing:-.2px;margin:0;display:flex;}
+  .gs-step{display:flex;flex-direction:column;gap:2px;}
+  .gs-step-title{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-medium);}
+  .gs-step-body{font-size:var(--fs-body1);line-height:var(--lh-body1);color:var(--text-secondary);padding-left:20px;}
+  .faq-list{display:flex;flex-direction:column;gap:12px;}
+  .faq{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-default,#fafafa);border:1px solid var(--outline);border-radius:6px;padding:12px 16px;text-align:left;width:100%;}
+  .faq-q{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-medium);color:var(--text-primary);}
+  .faq-chev{font-size:20px;color:var(--text-secondary);transition:transform .2s;flex-shrink:0;}
+  .faq-a{font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-secondary);max-height:0;overflow:hidden;padding:0 16px;transition:max-height .2s,padding .2s;}
+  .faq-a.open{max-height:200px;padding:8px 16px 12px;}
+  .survey-wrap{width:100%;max-width:1055px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .autosave{display:flex;align-items:center;gap:4px;font-size:14px;}
+  .autosave i{font-size:18px;color:var(--primary);} .autosave .info{font-size:14px;color:var(--text-secondary);}
+  .card{width:100%;background:var(--paper);border:1px solid var(--outline);border-radius:var(--radius-md);overflow:hidden;}
+  .progressbar{height:4px;background:var(--grey200);}
+  .progressbar > div{height:100%;background:var(--primary);transition:width .3s ease;}
+
+  /* Stepper */
+  .stepper{display:flex;align-items:center;gap:8px;padding:32px 24px 0;}
+  .step{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .step .num{width:24px;height:24px;border-radius:9999px;background:var(--text-disabled);color:#fff;font-size:var(--fs-caption);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step.active .num,.step.done .num{background:var(--primary);}
+  .step .stxt{font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-secondary);white-space:nowrap;}
+  .step.active .stxt{color:var(--text-primary);font-weight:500;}
+  .step .scount{font-size:var(--fs-caption);line-height:var(--lh-caption);color:var(--text-primary);}
+  .connector{flex:1;height:1px;background:var(--connector);min-width:16px;}
+
+  .panel{padding:32px 24px 24px;display:flex;flex-direction:column;gap:24px;}
+  .panel h2{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-semibold);margin:0;}
+  .alert{display:flex;align-items:flex-start;gap:8px;background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--radius-xs);padding:8px 16px;color:var(--info-text);font-size:var(--fs-body2);line-height:var(--lh-body2);}
+  .alert i.lead{font-size:20px;flex-shrink:0;margin-top:8px;} .alert .txt{padding:8px 0;flex:1;} .alert b{font-weight:500;}
+  .alert .close{margin-left:auto;background:none;border:none;color:var(--info-text);font-size:18px;padding:5px;border-radius:9999px;opacity:.7;}
+
+  /* Radio cards */
+  .radio-card{display:flex;align-items:center;gap:8px;height:54px;padding:8px 12px;border:1px solid var(--outline-strong);border-radius:var(--radius-btn);background:var(--paper);width:420px;}
+  .radio-card.sel{background:var(--green-50);border-color:var(--green-400);}
+  .radio-card .lbl{font-size:var(--fs-body2);line-height:var(--lh-body2);}
+  .radio-card .chip{background:var(--green-chip);color:#0f6e2e;border-radius:9999px;padding:2px 10px;font-size:13px;}
+  .radio-card .radio{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--text-secondary);position:relative;flex-shrink:0;}
+  .radio-card.sel .radio{border-color:var(--primary);}
+  .radio-card.sel .radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--primary);}
+  .accordion{display:flex;align-items:center;font-weight:var(--fw-medium);font-size:var(--fs-body1);line-height:var(--lh-body1);background:none;border:none;padding:8px 0;color:var(--text-primary);}
+  .accordion i{font-size:24px;}
+
+  .card-foot{border-top:1px solid var(--outline);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;}
+  .foot-left{display:flex;align-items:center;gap:12px;font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-primary);}
+  .foot-right{display:flex;gap:16px;margin-left:auto;}
+  .progress-circ{width:28px;height:28px;border-radius:50%;display:inline-block;position:relative;}
+  .progress-circ::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--paper);}
+
+  /* ---------- Question step ---------- */
+  .q-block{display:flex;flex-direction:column;gap:24px;}
+  .q-head{display:flex;flex-direction:column;gap:16px;}
+  .q-text{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-semibold);max-width:900px;}
+  .scope-chip{align-self:flex-start;background:var(--grey200);color:var(--text-primary);border-radius:9999px;padding:4px 12px;font-size:var(--fs-chip);line-height:var(--lh-chip);}
+
+  .bulk-callout{display:flex;align-items:center;gap:12px;background:#f5f5f5;border-radius:8px;padding:16px;}
+  .bulk-callout > i{font-size:22px;color:var(--text-secondary);flex-shrink:0;}
+  .bulk-txt{display:flex;flex-direction:column;gap:2px;}
+  .bulk-txt .lbl{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-semibold);}
+  .bulk-txt .hint{font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-secondary);}
+  .bulk-toggle{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .bulk-label{font-size:var(--fs-body1);line-height:var(--lh-body1);font-weight:var(--fw-medium);}
+  .switch{width:40px;height:22px;border-radius:9999px;background:var(--grey400);position:relative;border:none;flex-shrink:0;transition:background .2s;}
+  .switch.on{background:var(--primary);}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;}
+  .switch.on::after{left:20px;}
+
+  .yesno-stack{display:flex;flex-direction:column;gap:12px;max-width:540px;}
+  .answer-card{display:flex;align-items:center;gap:12px;height:56px;padding:8px 16px;border:1px solid var(--outline-strong);border-radius:8px;background:var(--paper);text-align:left;}
+  .answer-card.sel{background:var(--green-50);border-color:var(--green-400);}
+  .answer-icon{font-size:20px;color:var(--text-secondary);}
+  .answer-card.sel .answer-icon{color:#0f6e2e;}
+  .answer-lbl{font-size:var(--fs-body2);line-height:var(--lh-body2);}
+  .answer-card .radio{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--text-secondary);position:relative;flex-shrink:0;}
+  .answer-card .radio.on{border-color:var(--primary);}
+  .answer-card .radio.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--primary);}
+
+  /* Per-entity DataGrid */
+  .datagrid{display:flex;flex-direction:column;gap:16px;}
+  .grid-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .search{display:flex;align-items:center;gap:8px;border:1px solid var(--outline-strong);border-radius:var(--radius-btn);padding:8px 14px;width:240px;background:var(--paper);height:44px;}
+  .search i{font-size:18px;color:var(--text-secondary);}
+  .search input{border:none;outline:none;font-family:inherit;font-size:var(--fs-body2);line-height:var(--lh-body2);flex:1;background:transparent;color:var(--text-primary);}
+  .search input::placeholder{color:var(--text-secondary);}
+  .select-wrap{position:relative;}
+  .select-box{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--outline-strong);border-radius:var(--radius-btn);padding:8px 14px;font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-secondary);background:var(--paper);width:200px;height:44px;cursor:pointer;}
+  .select-box.active{border-color:var(--primary);color:var(--text-primary);font-weight:500;background:var(--green-50);}
+  .select-box i{font-size:18px;}
+  .select-box .clear-x{color:var(--text-secondary);}
+  .filter-menu{position:absolute;top:48px;left:0;z-index:20;background:var(--paper);border:1px solid var(--outline);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:200px;max-height:280px;overflow-y:auto;padding:4px;}
+  .filter-opt{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:none;border:none;padding:10px 12px;font-size:14px;color:var(--text-primary);border-radius:6px;}
+  .filter-opt:hover{background:#f5f5f5;}
+  .filter-opt.sel{color:var(--primary);font-weight:500;}
+  .filter-opt i{font-size:16px;color:var(--primary);}
+  .clear-filters{background:none;border:none;color:var(--primary);font-size:14px;font-weight:500;text-decoration:underline;padding:8px;}
+  .result-meta{font-size:13px;color:var(--text-secondary);}
+  .no-results{text-align:center;color:var(--text-secondary);padding:32px 12px;font-size:var(--fs-body2);line-height:var(--lh-body2);}
+
+  .ent-table{width:100%;border-collapse:collapse;font-size:var(--fs-body2);line-height:var(--lh-body2);border:1px solid var(--outline);border-radius:8px;overflow:hidden;}
+  .ent-table th{text-align:left;font-weight:var(--fw-medium);color:var(--text-primary);font-size:var(--fs-body2);line-height:var(--lh-body2);padding:14px 16px;border-bottom:1px solid var(--outline);background:#fafafa;}
+  .ent-table td{padding:14px 16px;border-bottom:1px solid var(--outline);vertical-align:middle;}
+  .ent-table tbody tr:last-child td{border-bottom:none;}
+  .cb-cell{width:48px;}
+  .cbox{width:20px;height:20px;border:1.5px solid var(--grey400);border-radius:4px;background:var(--paper);display:flex;align-items:center;justify-content:center;color:#fff;padding:0;}
+  .cbox.on{background:var(--primary);border-color:var(--primary);}
+  .cbox i{font-size:14px;}
+  .ent-placeholder{display:inline-flex;align-items:center;gap:8px;background:#ededed;color:var(--text-secondary);border-radius:6px;padding:6px 12px;font-size:var(--fs-body2);line-height:var(--lh-body2);}
+  .ent-placeholder i{font-size:16px;}
+  .cell-muted{color:var(--text-secondary);}
+  .answer-cell{display:flex;gap:0;justify-content:flex-end;}
+  .ans-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--paper);border:1px solid var(--outline-strong);font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-primary);}
+  .ans-btn:first-child{border-radius:6px 0 0 6px;border-right:none;}
+  .ans-btn:last-child{border-radius:0 6px 6px 0;}
+  .ans-btn i{font-size:16px;color:var(--text-secondary);}
+  .ans-btn.ans-yes{background:var(--green-50);border-color:var(--green-400);color:#0f6e2e;font-weight:500;z-index:1;}
+  .ans-btn.ans-yes i{color:#0f6e2e;}
+  .ans-btn.ans-no{background:#fdecea;border-color:#e69995;color:#b3261e;font-weight:500;z-index:1;}
+  .ans-btn.ans-no i{color:#b3261e;}
+
+  /* Bulk selection action bar */
+  .bulk-action-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--green-50);border:1px solid var(--green-400);border-radius:8px;padding:10px 16px;}
+  .bulk-count{display:flex;align-items:center;gap:8px;font-size:var(--fs-body2);line-height:var(--lh-body2);font-weight:var(--fw-medium);color:#0f6e2e;}
+  .bulk-count i{font-size:18px;}
+  .bulk-actions{display:flex;align-items:center;gap:8px;}
+  .bulk-apply-lbl{font-size:var(--fs-body2);line-height:var(--lh-body2);color:var(--text-secondary);margin-right:4px;}
+  .bulk-action-bar .ans-btn{border-radius:6px;border:1px solid var(--outline-strong);background:var(--paper);}
+  .bulk-action-bar .ans-btn:first-child,.bulk-action-bar .ans-btn:last-child{border-radius:6px;border-right:1px solid var(--outline-strong);}
+  .bulk-clear{background:none;border:none;color:var(--text-secondary);font-size:14px;text-decoration:underline;padding:8px;}
+
+  .placeholder-note{font-size:13px;color:var(--text-disabled);font-style:italic;}
+  .hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="logo"><img src="data:image/png;base64,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" alt="Greenly"></div>
+          <i class="ti ti-layout-sidebar-left-collapse" style="font-size:20px;color:var(--text-secondary)"></i>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="acct-input"><i class="ti ti-world"></i>Acme group<i class="ti ti-chevron-down caret"></i></div>
+          <div class="acct-input"><i class="ti ti-calendar"></i>2025<i class="ti ti-chevron-down caret"></i></div>
+        </div>
+        <button class="ask"><i class="ti ti-sparkles"></i>Ask anything</button>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active"><i class="ti ti-chart-pie lead"></i>Progress</div>
+        <div class="nav-item"><i class="ti ti-database lead"></i>Data<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-activity lead"></i>Emissions<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-target lead"></i>Actions<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-truck lead"></i>Suppliers<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-leaf lead"></i>ESG<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-recycle lead"></i>LCA<i class="ti ti-chevron-down caret"></i></div>
+        <div class="nav-item"><i class="ti ti-file-export lead"></i>Exports and resources</div>
+        <div class="nav-item"><i class="ti ti-settings lead"></i>Account<i class="ti ti-chevron-down caret"></i></div>
+      </nav>
+    </div>
+    <div class="side-foot">
+      <div class="side-select">English<i class="ti ti-chevron-down caret"></i></div>
+      <button class="logout"><i class="ti ti-logout"></i>Logout</button>
+    </div>
+  </aside>
+
+  <!-- Body -->
+  <div class="body">
+    <div class="main">
+      <div class="topnav">
+        <div class="crumb"><span class="muted">Progress</span><span class="sep">/</span><span>Emission sources and data collection plan</span></div>
+        <div class="topnav-actions" id="topnavActions"></div>
+      </div>
+
+      <div class="scroll" id="scroll">
+        <div class="header">
+          <div class="h-title">
+            <h1>Emission sources and data collection plan</h1>
+            <i class="ti ti-chevron-down" style="font-size:24px;color:var(--text-secondary)"></i>
+            <span class="chip-acct"><i class="ti ti-world"></i>Acme group</span>
+          </div>
+          <div class="tabs">
+            <div class="tabset" id="tabset"></div>
+            <div class="status-box"><span class="lbl">Status:</span><span class="status-pill">In progress</span></div>
+          </div>
+        </div>
+
+        <div class="content-area" id="contentArea"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------- Data model ----------------- */
+const COUNTRIES = [
+  {country:"France",flag:"🇫🇷"},{country:"Germany",flag:"🇩🇪"},{country:"Spain",flag:"🇪🇸"},
+  {country:"United Kingdom",flag:"🇬🇧"},{country:"Italy",flag:"🇮🇹"},{country:"Netherlands",flag:"🇳🇱"},
+  {country:"Switzerland",flag:"🇨🇭"},{country:"Sweden",flag:"🇸🇪"},{country:"Belgium",flag:"🇧🇪"},
+  {country:"Poland",flag:"🇵🇱"},{country:"Portugal",flag:"🇵🇹"},{country:"Denmark",flag:"🇩🇰"},
+];
+const INDUSTRIES = ["Technology","Manufacturing","Transport and logistics","Retail","Food and beverage","Energy","Pharmaceuticals","Construction","Professional services"];
+const SUFFIXES = {France:"SAS",Germany:"GmbH",Spain:"S.L.","United Kingdom":"Ltd",Italy:"S.r.l.",Netherlands:"BV",Switzerland:"AG",Sweden:"AB",Belgium:"SA",Poland:"Sp. z o.o.",Portugal:"Lda",Denmark:"ApS"};
+const UNITS = ["Manufacturing","Logistics","Retail","Tech Solutions","Foods","Energy","Pharma","Construction","Services","Digital","Textiles","Operations","Trading","Mobility","Materials","Systems"];
+const ENTITIES = (()=>{
+  const out=[]; let ci=0,ui=0,ii=0;
+  for(let i=0;i<32;i++){
+    const c=COUNTRIES[ci%COUNTRIES.length];
+    const unit=UNITS[ui%UNITS.length];
+    out.push({
+      name:"Acme "+unit+" "+(SUFFIXES[c.country]||""),
+      country:c.country, flag:c.flag, industry:INDUSTRIES[ii%INDUSTRIES.length]
+    });
+    ci++;ui++;ii++;
+  }
+  return out;
+})();
+
+/* Scopes (steps). Real copy where provided; placeholders elsewhere. */
+const SCOPES = [
+  { key:"setup", label:"Set up" },
+  { key:"direct", label:"Direct emissions", questions:[
+      { id:"d1", text:"Does your organization/entities perform production processes that directly emit greenhouse gases?", chip:"Scope 1 - Direct emissions", real:true },
+  ]},
+  { key:"downstream", label:"Indirect downstream", questions:[
+      { id:"ds1", text:"Does your organization/entities sell products or services that consume fossil fuels and/or electricity, or that directly emits greenhouse gases?", chip:"Scope 3.11 - Use of product sold", real:true },
+      { id:"ds2", text:"Does your organization sell products that need to be disposed of at the end of their lifetime?", chip:"Scope 3.12 - End-of-life treatment of sold products", real:true },
+  ]},
+  { key:"upstream", label:"Indirect upstream", questions:[
+      { id:"us1", text:"Do your employees undertake business travel as part of their job responsibilities?", chip:"Scope 3.6 - Business travel", real:true },
+      { id:"us2", text:"Do you own vehicles or have long term vehicle leases?", chip:"Scope 1 - Mobile combustion", real:true },
+  ]},
+  { key:"summary", label:"Summary" },
+];
+
+/* ----------------- State ----------------- */
+const state = {
+  activeTab: "started",    // "started" | "survey" | "plan"
+  stepIndex: 0,            // index into SCOPES
+  qIndex: 0,               // index of current question within the scope
+  delegation: "answer",    // "answer" | "delegate"
+  answers: {},
+  selected: new Set(),
+  filters: { search:"", country:"", industry:"", answer:"" },
+  openMenu: null,
+};
+SCOPES.forEach(s=>{ if(s.questions) s.questions.forEach(q=>{
+  state.answers[q.id] = { bulk:true, bulkValue:null, perEntity:{} };
+});});
+
+/* ----------------- Render helpers ----------------- */
+const tabsetEl = document.getElementById('tabset');
+const topnavActionsEl = document.getElementById('topnavActions');
+const contentAreaEl = document.getElementById('contentArea');
+const scrollEl = document.getElementById('scroll');
+
+function scopeCounts(scope){
+  if(!scope.questions) return null;
+  let answered=0;
+  scope.questions.forEach(q=>{
+    const a=state.answers[q.id];
+    if(a.bulk){ if(a.bulkValue) answered++; }
+    else { const vals=Object.values(a.perEntity); if(vals.length===ENTITIES.length && vals.every(v=>v)) answered++; }
+  });
+  return {answered, total:scope.questions.length};
+}
+
+function renderStepper(){
+  let html='';
+  SCOPES.forEach((s,i)=>{
+    const cls='step'+(i===state.stepIndex?' active':'')+(i<state.stepIndex?' done':'');
+    const num = i<state.stepIndex ? '<i class="ti ti-check" style="font-size:14px"></i>' : (i+1);
+    const counts=scopeCounts(s);
+    html+=`<div class="${cls}" style="cursor:pointer" onclick="goToStep(${i})">
+        <div class="num">${num}</div>
+        <div><div class="stxt">${s.label}</div>${counts?`<div class="scount">${counts.answered}/${counts.total}</div>`:''}</div>
+      </div>`;
+    if(i<SCOPES.length-1) html+='<div class="connector"></div>';
+  });
+  return html;
+}
+
+function renderSetup(){
+  return `
+  <div class="panel">
+    <h2>How would you like to complete this survey?</h2>
+    <div class="alert">
+      <i class="ti ti-bulb lead"></i>
+      <div class="txt"><b>Tip:</b> If your entities share similar activities and you're familiar with how they operate, we recommend answering the survey yourself. Delegating the survey means each entity will choose their own data collection modules, tailoring what activity data they collect.</div>
+      <button class="close" onclick="this.parentElement.style.display='none'"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="radio-card ${state.delegation==='answer'?'sel':''}" onclick="setDelegation('answer')">
+        <span class="lbl">Answer for all entities</span>
+        <span class="chip">Recommended</span>
+        <span class="radio"></span>
+      </div>
+      <div class="radio-card ${state.delegation==='delegate'?'sel':''}" onclick="setDelegation('delegate')">
+        <span class="lbl">Delegate all to entities</span>
+        <span class="radio"></span>
+      </div>
+    </div>
+    <button class="accordion">See survey preview <i class="ti ti-chevron-down"></i></button>
+  </div>`;
+}
+
+function renderScope(scope){
+  const q = scope.questions[state.qIndex];
+  const a = state.answers[q.id];
+  let html='<div class="panel">';
+  html+=`<div class="q-block">
+      <div class="q-head">
+        <div class="q-text">${q.text}</div>
+        <div class="scope-chip">${q.chip}</div>
+        ${q.real?'':'<div class="placeholder-note">Placeholder — final copy to be added</div>'}
+      </div>`;
+
+  // Bulk-answer callout
+  html+=`<div class="bulk-callout">
+      <i class="ti ti-rocket"></i>
+      <div class="bulk-txt">
+        <div class="lbl">Apply the same answer to all ${ENTITIES.length} entities</div>
+        <div class="hint">Switch off to set different answers for specific entities</div>
+      </div>
+      <div class="bulk-toggle">
+        <button class="switch ${a.bulk?'on':''}" onclick="toggleBulk('${q.id}')" aria-label="Bulk answer"></button>
+        <span class="bulk-label">Bulk answer</span>
+      </div>
+    </div>`;
+
+  if(a.bulk){
+    html+=`<div class="yesno-stack">
+      <button class="answer-card ${a.bulkValue==='yes'?'sel':''}" onclick="setBulkValue('${q.id}','yes')">
+        <i class="ti ti-check answer-icon"></i><span class="answer-lbl">Yes</span>
+        <span class="radio ${a.bulkValue==='yes'?'on':''}"></span>
+      </button>
+      <button class="answer-card ${a.bulkValue==='no'?'sel':''}" onclick="setBulkValue('${q.id}','no')">
+        <i class="ti ti-x answer-icon"></i><span class="answer-lbl">No</span>
+        <span class="radio ${a.bulkValue==='no'?'on':''}"></span>
+      </button>
+    </div>`;
+  } else {
+    html+=renderEntityTable(q.id);
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function renderEntityTable(qid){
+  const a=state.answers[qid];
+  const f=state.filters;
+  const visible = ENTITIES.filter(e=>{
+    if(f.search && !(e.name.toLowerCase().includes(f.search.toLowerCase())||e.country.toLowerCase().includes(f.search.toLowerCase())||e.industry.toLowerCase().includes(f.search.toLowerCase()))) return false;
+    if(f.country && e.country!==f.country) return false;
+    if(f.industry && e.industry!==f.industry) return false;
+    if(f.answer==='Answered' && !a.perEntity[e.name]) return false;
+    if(f.answer==='Unanswered' && a.perEntity[e.name]) return false;
+    return true;
+  });
+  const visibleNames = new Set(visible.map(e=>e.name));
+  const allVisibleSelected = visible.length>0 && visible.every(e=>state.selected.has(e.name));
+  let rows='';
+  visible.forEach((e)=>{
+    const v=a.perEntity[e.name]||null;
+    const checked=state.selected.has(e.name);
+    rows+=`<tr data-entity="${e.name}">
+      <td class="cb-cell"><button class="cbox ${checked?'on':''}" onclick="toggleRowSelect('${e.name.replace(/'/g,"\\'")}')" aria-label="Select row">${checked?'<i class="ti ti-check"></i>':''}</button></td>
+      <td><span class="ent-placeholder"><i class="ti ti-table"></i>${e.name}</span></td>
+      <td class="cell-muted">${e.country}</td>
+      <td class="cell-muted">${e.industry}</td>
+      <td class="answer-cell">
+        <button class="ans-btn ${v==='yes'?'ans-yes':''}" onclick="setEntityValue('${qid}','${e.name.replace(/'/g,"\\'")}','yes')"><i class="ti ti-check"></i>Yes</button>
+        <button class="ans-btn ${v==='no'?'ans-no':''}" onclick="setEntityValue('${qid}','${e.name.replace(/'/g,"\\'")}','no')"><i class="ti ti-x"></i>No</button>
+      </td>
+    </tr>`;
+  });
+  if(visible.length===0){
+    rows=`<tr><td colspan="5" class="no-results">No entities match these filters. <button class="bulk-clear" onclick="clearFilters()">Clear filters</button></td></tr>`;
+  }
+
+  const n=state.selected.size;
+  const bulkBar = n>0 ? `<div class="bulk-action-bar">
+      <span class="bulk-count"><i class="ti ti-checkbox"></i>${n} ${n===1?'entity':'entities'} selected</span>
+      <div class="bulk-actions">
+        <span class="bulk-apply-lbl">Set selected to:</span>
+        <button class="ans-btn" onclick="applyToSelected('${qid}','yes')"><i class="ti ti-check"></i>Yes</button>
+        <button class="ans-btn" onclick="applyToSelected('${qid}','no')"><i class="ti ti-x"></i>No</button>
+        <button class="bulk-clear" onclick="clearSelection()">Clear</button>
+      </div>
+    </div>` : '';
+
+  return `<div class="datagrid">
+    <div class="grid-toolbar">
+      <div class="search"><i class="ti ti-search"></i><input placeholder="Search entity..." value="${f.search}" oninput="setSearch(this.value)"></div>
+      ${filterDropdown('country','Country', [...new Set(ENTITIES.map(e=>e.country))])}
+      ${filterDropdown('industry','Industry', [...new Set(ENTITIES.map(e=>e.industry))])}
+      ${filterDropdown('answer','Answer status', ['Answered','Unanswered'])}
+      ${activeFilterCount()>0?`<button class="clear-filters" onclick="clearFilters()">Clear filters</button>`:''}
+    </div>
+    ${bulkBar}
+    <div class="result-meta">${visible.length} of ${ENTITIES.length} entities</div>
+    <table class="ent-table" id="table-${qid}">
+      <thead><tr>
+        <th class="cb-cell"><button class="cbox ${allVisibleSelected?'on':''}" onclick="toggleSelectAll('${qid}')" aria-label="Select all">${allVisibleSelected?'<i class="ti ti-check"></i>':''}</button></th>
+        <th>Entity</th><th>Country</th><th>Industry</th><th>Answer</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function filterDropdown(key,label,options){
+  const val=state.filters[key];
+  const isOpen=state.openMenu===key;
+  const display = val || label;
+  const menu = isOpen ? `<div class="filter-menu">
+      <button class="filter-opt ${!val?'sel':''}" onclick="setFilter('${key}','')">All</button>
+      ${options.map(o=>`<button class="filter-opt ${val===o?'sel':''}" onclick="setFilter('${key}','${o.replace(/'/g,"\\'")}')">${o}${val===o?'<i class=\"ti ti-check\"></i>':''}</button>`).join('')}
+    </div>` : '';
+  return `<div class="select-wrap">
+    <div class="select-box ${val?'active':''}" onclick="toggleMenu('${key}')">
+      <span>${display}</span>
+      ${val?`<i class="ti ti-x clear-x" onclick="event.stopPropagation();setFilter('${key}','')"></i>`:`<i class="ti ti-chevron-down"></i>`}
+    </div>
+    ${menu}
+  </div>`;
+}
+function activeFilterCount(){
+  const f=state.filters; return [f.country,f.industry,f.answer].filter(Boolean).length;
+}
+
+function renderSummary(){
+  let rows='';
+  SCOPES.filter(s=>s.questions).forEach(scope=>{
+    const c=scopeCounts(scope);
+    rows+=`<tr><td class="ent-name">${scope.label}</td><td>${c.answered}/${c.total} answered</td>
+      <td>${c.answered===c.total?'<span style="color:#0f6e2e;font-weight:500"><i class="ti ti-circle-check"></i> Complete</span>':'<span style="color:#b3261e"><i class="ti ti-alert-circle"></i> Incomplete</span>'}</td></tr>`;
+  });
+  return `<div class="panel">
+    <h2>Survey summary</h2>
+    <div class="alert"><i class="ti ti-bulb lead"></i><div class="txt">Review your answers below. Once you submit, we'll generate the data collection plan based on the emission sources you confirmed.</div></div>
+    <table class="ent-table">
+      <thead><tr><th>Scope</th><th>Progress</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+/* ----------------- Actions ----------------- */
+function setDelegation(v){ state.delegation=v; render(); }
+function toggleBulk(qid){ state.answers[qid].bulk=!state.answers[qid].bulk; state.selected.clear();
+  state.filters={search:"",country:"",industry:"",answer:""}; state.openMenu=null; render(); }
+function setBulkValue(qid,v){ state.answers[qid].bulkValue = state.answers[qid].bulkValue===v?null:v; render(); }
+function setEntityValue(qid,name,v){
+  const pe=state.answers[qid].perEntity;
+  pe[name] = pe[name]===v?null:v;
+  render();
+}
+function toggleRowSelect(name){
+  if(state.selected.has(name)) state.selected.delete(name); else state.selected.add(name);
+  render();
+}
+function toggleSelectAll(qid){
+  const a=state.answers[qid]; const f=state.filters;
+  const visible = ENTITIES.filter(e=>{
+    if(f.search && !(e.name.toLowerCase().includes(f.search.toLowerCase())||e.country.toLowerCase().includes(f.search.toLowerCase())||e.industry.toLowerCase().includes(f.search.toLowerCase()))) return false;
+    if(f.country && e.country!==f.country) return false;
+    if(f.industry && e.industry!==f.industry) return false;
+    if(f.answer==='Answered' && !a.perEntity[e.name]) return false;
+    if(f.answer==='Unanswered' && a.perEntity[e.name]) return false;
+    return true;
+  });
+  const allSel = visible.length>0 && visible.every(e=>state.selected.has(e.name));
+  if(allSel) visible.forEach(e=>state.selected.delete(e.name));
+  else visible.forEach(e=>state.selected.add(e.name));
+  render();
+}
+function clearSelection(){ state.selected.clear(); render(); }
+function applyToSelected(qid,v){
+  const pe=state.answers[qid].perEntity;
+  state.selected.forEach(name=>{ pe[name]=v; });
+  state.selected.clear();
+  render();
+}
+function setSearch(v){ state.filters.search=v; renderTableOnly(); }
+function setFilter(key,val){ state.filters[key]=val; state.openMenu=null; render(); }
+function toggleMenu(key){ state.openMenu = state.openMenu===key?null:key; render(); }
+function clearFilters(){ state.filters={search:"",country:"",industry:"",answer:""}; state.openMenu=null; render(); }
+
+// re-render only the table area so the search input keeps focus
+function renderTableOnly(){
+  const scope=SCOPES[state.stepIndex];
+  if(!scope.questions) return;
+  const q=scope.questions[state.qIndex];
+  if(state.answers[q.id].bulk) return;
+  const container=document.querySelector('.datagrid');
+  if(!container) return;
+  const active=document.activeElement;
+  const caret=active&&active.tagName==='INPUT'?active.selectionStart:null;
+  container.outerHTML=renderEntityTable(q.id);
+  const newInput=document.querySelector('.search input');
+  if(newInput && active && active.tagName==='INPUT'){ newInput.focus(); if(caret!=null) newInput.setSelectionRange(caret,caret); }
+  updateFooter();
+}
+
+// answered count for current question (used in footer)
+function questionAnswered(q){
+  const a=state.answers[q.id];
+  if(a.bulk) return a.bulkValue ? ENTITIES.length : 0;
+  return Object.values(a.perEntity).filter(v=>v).length;
+}
+
+function goToStep(i){
+  if(i<0||i>SCOPES.length-1) return;
+  state.stepIndex=i;
+  state.qIndex=0;
+  state.selected.clear();
+  state.filters={search:"",country:"",industry:"",answer:""}; state.openMenu=null;
+  render();
+  scrollEl.scrollTop=0;
+}
+
+// advance one question; roll into next scope when at the last question
+function advance(){
+  const scope=SCOPES[state.stepIndex];
+  state.selected.clear();
+  state.filters={search:"",country:"",industry:"",answer:""}; state.openMenu=null;
+  if(scope.questions && state.qIndex < scope.questions.length-1){
+    state.qIndex++; render(); scrollEl.scrollTop=0;
+  } else if(state.stepIndex < SCOPES.length-1){
+    goToStep(state.stepIndex+1);
+  }
+}
+function goBack(){
+  const scope=SCOPES[state.stepIndex];
+  state.selected.clear();
+  state.filters={search:"",country:"",industry:"",answer:""}; state.openMenu=null;
+  if(scope.questions && state.qIndex>0){
+    state.qIndex--; render(); scrollEl.scrollTop=0;
+  } else if(state.stepIndex>0){
+    const prev=SCOPES[state.stepIndex-1];
+    state.stepIndex--;
+    state.qIndex = prev.questions ? prev.questions.length-1 : 0;
+    render(); scrollEl.scrollTop=0;
+  }
+}
+
+/* ----------------- Getting started tab ----------------- */
+function renderGettingStarted(){
+  const faqs=[
+    "What is a data collection module?",
+    "What is the difference between spend-based and activity-based data?",
+    "How do we decide which modules are relevant?",
+    "What if a suggested module doesn't apply to me?",
+    "Can I change my module selection later?",
+  ];
+  return `<div class="gs-wrap">
+    <div class="hero-card">
+      <div class="hero-text">
+        <div>
+          <h2 class="hero-title">About</h2>
+          <p class="hero-body">Start with a short survey to map your emission sources. Based on your activity and industry, we recommend the right data collection modules helping you progress from spend-based calculations to activity-based data unlocking higher accuracy, automation, and measurable reduction opportunities.</p>
+        </div>
+        <a class="link-strong" onclick="setTab('survey')">Learn more</a>
+      </div>
+      <div class="hero-img">${heroIllustration()}</div>
+    </div>
+    <div class="gs-cols">
+      <div class="gs-card">
+        <h2 class="gs-h">Steps</h2>
+        ${gsStep(1,'Identify your emission sources',"Answer a short survey so we can identify your company's emission sources.")}
+        ${gsStep(2,'Review recommended modules','Based on your company profile, we suggest modules to ensure full coverage of your activities and increase precision.')}
+        ${gsStep(3,'Build your collection plan','Add modules based on the recommendations and level of precision you want to achieve.')}
+      </div>
+      <div class="gs-card">
+        <h2 class="gs-h">FAQs</h2>
+        <div class="faq-list">
+          ${faqs.map((q,i)=>`<button class="faq" onclick="toggleFaq(${i})">
+            <span class="faq-q">${q}</span>
+            <i class="ti ti-chevron-down faq-chev" id="faqchev-${i}"></i>
+          </button>
+          <div class="faq-a" id="faqa-${i}"></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function gsStep(n,title,body){
+  return `<div class="gs-step">
+    <div class="gs-step-title">${n}. ${title}</div>
+    <div class="gs-step-body">${body}</div>
+  </div>`;
+}
+function toggleFaq(i){
+  const a=document.getElementById('faqa-'+i);
+  const chev=document.getElementById('faqchev-'+i);
+  if(!a) return;
+  const open=a.classList.toggle('open');
+  chev.style.transform = open?'rotate(180deg)':'';
+  a.textContent = open ? 'Placeholder answer — final FAQ copy to be added.' : '';
+}
+function heroIllustration(){
+  return `<svg viewBox="0 0 592 332" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <rect width="592" height="332" fill="#d9f0e0"/>
+    <circle cx="40" cy="300" r="120" fill="#c4e8cc" opacity="0.6"/>
+    <circle cx="540" cy="30" r="90" fill="#b7e3c2" opacity="0.5"/>
+    <g transform="translate(40,52)">
+      <rect width="232" height="120" rx="10" fill="#ffffff"/>
+      <text x="16" y="30" font-family="Inter" font-size="13" font-weight="600" fill="#171717">Covered emission</text>
+      <text x="16" y="48" font-family="Inter" font-size="13" font-weight="600" fill="#171717">sources</text>
+      <circle cx="180" cy="70" r="30" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+      <circle cx="180" cy="70" r="30" fill="none" stroke="#26a551" stroke-width="8" stroke-dasharray="140 188" stroke-linecap="round" transform="rotate(-90 180 70)"/>
+      <rect x="16" y="86" width="90" height="6" rx="3" fill="#eee"/>
+      <rect x="16" y="100" width="60" height="6" rx="3" fill="#eee"/>
+    </g>
+    <g transform="translate(320,52)">
+      <rect width="232" height="120" rx="10" fill="#ffffff"/>
+      <text x="16" y="30" font-family="Inter" font-size="13" font-weight="600" fill="#171717">Increased accuracy</text>
+      ${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${16+i*26}" y="${96-(i*8+12)}" width="16" height="${i*8+12}" rx="3" fill="${i>4?'#26a551':'#c4e8cc'}"/>`).join('')}
+    </g>
+    <g transform="translate(40,196)">
+      <rect width="512" height="44" rx="8" fill="#ffffff"/>
+      <circle cx="26" cy="22" r="10" fill="#eef6f0"/>
+      <text x="46" y="27" font-family="Inter" font-size="13" fill="#171717">IT inventory</text>
+      <rect x="150" y="12" width="86" height="20" rx="10" fill="#e6f6ea"/>
+      <text x="162" y="26" font-family="Inter" font-size="11" fill="#0f6e2e">Recommended</text>
+      <rect x="430" y="11" width="64" height="22" rx="6" fill="#26a551"/>
+      <text x="448" y="26" font-family="Inter" font-size="12" font-weight="600" fill="#fff">Add</text>
+    </g>
+    <g transform="translate(40,250)">
+      <rect width="512" height="44" rx="8" fill="#ffffff"/>
+      <circle cx="26" cy="22" r="10" fill="#eef6f0"/>
+      <text x="46" y="27" font-family="Inter" font-size="13" fill="#171717">Business travel</text>
+      <rect x="160" y="12" width="86" height="20" rx="10" fill="#e6f6ea"/>
+      <text x="172" y="26" font-family="Inter" font-size="11" fill="#0f6e2e">Recommended</text>
+      <rect x="430" y="11" width="64" height="22" rx="6" fill="#26a551"/>
+      <text x="448" y="26" font-family="Inter" font-size="12" font-weight="600" fill="#fff">Add</text>
+    </g>
+  </svg>`;
+}
+
+/* ----------------- Collection plan (placeholder) ----------------- */
+function renderPlanPlaceholder(){
+  return `<div class="gs-wrap"><div class="gs-card" style="text-align:center;padding:64px 32px;">
+    <h2 class="gs-h" style="justify-content:center;">Collection plan</h2>
+    <p class="hero-body" style="color:var(--text-secondary)">This tab is next on the list. The module-selection interface (Plan and Summary by entity tables) will live here.</p>
+  </div></div>`;
+}
+
+/* ----------------- Master render ----------------- */
+const TABS=[{key:"started",n:1,label:"Getting started"},{key:"survey",n:2,label:"Survey"},{key:"plan",n:3,label:"Collection plan"}];
+
+function setTab(key){ state.openMenu=null; state.activeTab=key; render(); scrollEl.scrollTop=0; }
+
+function renderTabs(){
+  return TABS.map((t,i)=>{
+    const active=state.activeTab===t.key;
+    const done = TABS.findIndex(x=>x.key===state.activeTab) > i;
+    return `<div class="tab ${active?'active':''} ${done?'done':''}" onclick="setTab('${t.key}')">
+      <span class="step-dot">${done?'<i class="ti ti-check" style="font-size:13px"></i>':t.n}</span>${t.label}</div>`;
+  }).join('');
+}
+
+function footerInner(){
+  const scope=SCOPES[state.stepIndex];
+  let left='', right='';
+  if(scope.questions){
+    const q=scope.questions[state.qIndex];
+    const ans=questionAnswered(q);
+    const pct=Math.round((ans/ENTITIES.length)*100);
+    const ring = ans===ENTITIES.length
+      ? '<i class="ti ti-circle-check" style="font-size:28px;color:var(--primary)"></i>'
+      : `<span class="progress-circ" style="background:conic-gradient(var(--primary) ${pct*3.6}deg, var(--grey200) 0)"></span>`;
+    left=`<div class="foot-left">${ring}<span>${ans}/${ENTITIES.length} entities answered</span></div>`;
+  }
+  if(scope.key==='setup'){
+    right=`<button class="btn btn-primary" onclick="advance()">Continue<i class="ti ti-chevron-right"></i></button>`;
+  } else if(scope.key==='summary'){
+    right=`<button class="btn btn-outline" onclick="goBack()"><i class="ti ti-chevron-left"></i>Back</button>
+           <button class="btn btn-primary" onclick="setTab('plan')">Submit answers</button>`;
+  } else {
+    right=`<button class="btn btn-outline" onclick="goBack()"><i class="ti ti-chevron-left"></i>Back</button>
+           <button class="btn btn-primary" onclick="advance()">Continue<i class="ti ti-chevron-right"></i></button>`;
+  }
+  return `${left}<div class="foot-right">${right}</div>`;
+}
+
+function updateFooter(){
+  const f=document.querySelector('#cardFoot');
+  if(f) f.innerHTML=footerInner();
+}
+
+function renderSurveyTab(){
+  const scope=SCOPES[state.stepIndex];
+  let content;
+  if(scope.key==='setup') content=renderSetup();
+  else if(scope.key==='summary') content=renderSummary();
+  else content=renderScope(scope);
+  const pct=Math.round((state.stepIndex/(SCOPES.length-1))*100);
+  return `<div class="survey-wrap">
+    <div class="autosave"><i class="ti ti-circle-check"></i>Auto-save<i class="ti ti-info-circle info"></i></div>
+    <div class="card">
+      <div class="progressbar"><div style="width:${pct}%"></div></div>
+      <div class="stepper">${renderStepper()}</div>
+      <div id="stepContent">${content}</div>
+      <div class="card-foot" id="cardFoot">${footerInner()}</div>
+    </div>
+  </div>`;
+}
+
+function topnavActions(){
+  if(state.activeTab==='started'){
+    return `<button class="btn btn-primary" onclick="setTab('survey')">Continue<i class="ti ti-chevron-right"></i></button>`;
+  }
+  if(state.activeTab==='survey'){
+    const onSummary = SCOPES[state.stepIndex].key==='summary';
+    return `<button class="btn btn-outline" onclick="setTab('started')"><i class="ti ti-chevron-left"></i>Back</button>
+            <button class="btn ${onSummary?'btn-primary':'btn-disabled'}" ${onSummary?"onclick=\"setTab('plan')\"":''}>Submit answers</button>`;
+  }
+  return `<button class="btn btn-outline" onclick="setTab('survey')"><i class="ti ti-chevron-left"></i>Back</button>`;
+}
+
+function render(){
+  tabsetEl.innerHTML=renderTabs();
+  topnavActionsEl.innerHTML=topnavActions();
+  if(state.activeTab==='started') contentAreaEl.innerHTML=renderGettingStarted();
+  else if(state.activeTab==='survey') contentAreaEl.innerHTML=renderSurveyTab();
+  else contentAreaEl.innerHTML=renderPlanPlaceholder();
+}
+render();
+
+document.addEventListener('click',(e)=>{
+  if(state.openMenu && !e.target.closest('.select-wrap')){
+    state.openMenu=null; render();
+  }
+});
+</script>
+</body>
+</html>
